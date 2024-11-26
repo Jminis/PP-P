@@ -23,7 +23,7 @@ const Dashboard = () => {
         // 알림 이벤트 수신
         socketRef.current.on('notification', (data) => {
             console.log('Received notification:', data);
-            alert(`New Notification: ${data.message}`); // 알림창
+            alert(`New Notification: ${data.con}`); // 알림창에 'con' 값 표시
         });
 
         // 연결 오류 처리
@@ -42,22 +42,37 @@ const Dashboard = () => {
 
     // Fetch All Data
     const fetchAllData = async () => {
+        console.log('Fetching all data...');
         try {
             // Fetch Delivery Info
+/*
             const deliveryResponse = await fetch('http://127.0.0.1:8000/bbbb', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             });
             const deliveryJson = await deliveryResponse.json();
             setDeliveryInfo(deliveryJson);
-
-            // Fetch Sensor Data
-            const sensorResponse = await fetch('http://127.0.0.1:8000/aaaa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+*/
+            // Fetch Shock Data
+            const shockResponse = await fetch('http://127.0.0.1:8080/cse-in/SafePackage2/shock/la', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-M2M-Origin': 'SafePackage2',
+                    'X-M2M-RI': 'req12345',
+                    'X-M2M-RVI': '3',
+                },
             });
-            const sensorJson = await sensorResponse.json();
-            setSensorData(sensorJson);
+
+            if (shockResponse.ok) {
+                const shockJson = await shockResponse.json();
+                console.log('Shock data JSON:', shockJson);
+                const shockValue = shockJson?.['m2m:cin']?.['con'] || 'No data';
+                setSensorData((prevData) => ({ ...prevData, shock: shockValue }));
+            } else {
+                console.error('Error fetching shock data:', shockResponse.status);
+                setSensorData((prevData) => ({ ...prevData, shock: 'Error' }));
+            }
 
             // Fetch Timeline Data
             const timelineResponse = await fetch('http://127.0.0.1:8000/cccc', {
