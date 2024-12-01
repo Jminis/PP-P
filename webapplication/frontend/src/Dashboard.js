@@ -7,6 +7,13 @@ const Dashboard = () => {
     const [deliveryInfo, setDeliveryInfo] = useState({ destination: '', receiver: '', sender: '' });
     const [timeline, setTimeline] = useState([]);
     const socketRef = useRef(null);
+     
+    // 임계값 정의 (pi를 기준으로 설정)
+    const thresholds = {
+        "cnt882515336279436808": 300, // Shock 임계값
+        "cnt8599142350661952296": 40,  // Temperature 임계값
+        "cnt4490345565476932953": "on" // Open 상태값
+    };
 
     // 소켓 연결 및 알림 처리
     useEffect(() => {
@@ -21,9 +28,40 @@ const Dashboard = () => {
         });
 
         // 알림 이벤트 수신
+        // socketRef.current.on('notification', (data) => {
+        //    console.log('Received notification:', data);
+        //    alert(`New Notification!: ${data.con}`); // 알림창에 'con' 값 표시
+        //});
+	
+	// 알림 이벤트 수신
         socketRef.current.on('notification', (data) => {
-            console.log('Received notification:', data);
-            alert(`New Notification: ${data.con}`); // 알림창에 'con' 값 표시
+            console.log('Received notification:', data); // 수신 확인 로그
+
+            const { con, pi } = data; // `data` 객체에서 `con`과 `pi` 추출
+
+            // 해당 con 값에 대한 임계값 가져오기
+            const threshold = thresholds[pi];
+
+            // console.log('Extracted con:', con);
+            // console.log('Extracted pi:', pi);
+
+            if (pi === "cnt4490345565476932953") {   // Open
+                if (con === threshold) {
+                    alert(`ALERT! Safe Package is open`); // 알림창
+               }
+            } else {   // Shock or Temperature
+                if (Number(con) > threshold) {
+                    alert(`ALERT! Value(${con}) > Threshold(${threshold})`); // 알림창
+               }
+            }
+            // if (threshold === undefined) {
+            //     console.warn(`Unknown con type: ${con}`); // 알 수 없는 con 값 처리
+            //} else if (pi ==                                                                     //  (con > threshold) {
+            //    alert(`ALERT! Value(${con}) > Threshold(${threshold})`); // 알림창
+            //}
+
+            // 모든 알림을 상태에 저장
+            // setNotifications((prev) => [...prev, { con, cin }]);
         });
 
         // 연결 오류 처리
