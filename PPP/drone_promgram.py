@@ -14,7 +14,7 @@ destination_latitude =  37.55062087654126
 destination_longitude =  127.07425390537487
 
 # 위치 업데이트 간격 (초)
-UPDATE_INTERVAL = 10  # 10분 = 600초
+UPDATE_INTERVAL = 5  # 5초
 
 def simulate_movement(lat1, lon1, lat2, lon2, step_fraction):
     """두 좌표 간 선형 보간법으로 위치 이동 시뮬레이션."""
