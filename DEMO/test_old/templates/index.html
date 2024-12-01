@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafePackage Management</title>
+    <script>
+        function sendRequest(endpoint, payload = {}) {
+            fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        alert("Request succeeded: " + data.response);
+                    } else {
+                        alert("Request failed: " + data.message);
+                    }
+                })
+                .catch(error => alert("Request failed: " + error));
+        }
+    </script>
+</head>
+<body>
+    <h1>SafePackage Management</h1>
+
+    <h2>AE Management</h2>
+    <button onclick="sendRequest('/create_ae')">Create AE</button>
+    <button onclick="sendRequest('/delete_ae')">Delete AE</button>
+
+    <h2>Container Management</h2>
+    <input type="text" id="containerName" placeholder="Container Name">
+    <button onclick="sendRequest('/create_container/' + document.getElementById('containerName').value)">Create Container</button>
+    <button onclick="sendRequest('/delete_container/' + document.getElementById('containerName').value)">Delete Container</button>
+
+    <h2>Content Instance Management</h2>
+    <input type="text" id="contentContainerName" placeholder="Container Name">
+    <input type="text" id="contentValue" placeholder="Content Value">
+    <button onclick="
+        sendRequest('/create_content_instance', {
+            container_name: document.getElementById('contentContainerName').value,
+            con: document.getElementById('contentValue').value
+        })">Create Content Instance</button>
+
+    <h2>Subscription Management</h2>
+    <button onclick="sendRequest('/create_subscription/' + document.getElementById('containerName').value)">Create Subscription</button>
+</body>
+</html>
+
