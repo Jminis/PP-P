@@ -13,14 +13,14 @@ SHOCK_URL = f"{ACME_BASE_URL}/Shock"
 TEMPERATURE_URL = f"{ACME_BASE_URL}/Temperature"
 
 # Location update interval (seconds)
-UPDATE_INTERVAL = 5  # 5 seconds
+UPDATE_INTERVAL = 2
 
 # Initialize Flask app
 app = Flask(__name__)
 
 HEADERS = {
     "X-M2M-Origin": "SafePackage",
-    "X-M2M-RI": "12345",
+    "X-M2M-RI": "req-drone-resource-data",
     "X-M2M-RVI": "3",
     "Content-Type": "application/json;ty=4",
     "Accept": "application/json",
@@ -70,8 +70,12 @@ def send_data(url, resource_name, content):
         print(f"[{datetime.now()}] Request exception occurred: {str(e)}")
 
 
+sent_shock_20 = False
+
 def send_location_and_sensor_data(resource_name, latitude, longitude):
     """Send location, shock, and temperature data simultaneously."""
+    global sent_shock_20  # Access the global flag
+
     # Send location information
     location_payload = json.dumps({
         "latitude": f"{latitude:.6f}",
@@ -81,13 +85,16 @@ def send_location_and_sensor_data(resource_name, latitude, longitude):
     send_data(f"{ACME_BASE_URL}/location", resource_name, location_payload)
 
     # Send shock data
-    shock_value = round(random.uniform(5.0, 20.0), 2)
+    if not sent_shock_20:
+        shock_value = 20.0  # Send 20 once
+        sent_shock_20 = True  # Mark as sent
+    else:
+        shock_value = round(random.uniform(5.0, 20.0), 2)  # Random value after
     send_data(SHOCK_URL, f"{resource_name}_shock", shock_value)
 
     # Send temperature data
     temperature_value = round(random.uniform(10.0, 12.0), 2)
     send_data(TEMPERATURE_URL, f"{resource_name}_temp", temperature_value)
-
 
 def drone_simulation():
     """Drone movement simulation program."""

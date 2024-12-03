@@ -52,8 +52,17 @@ function Dashboard() {
     return R * c;
   };
 
-  // Add new data point to timelineData
+  // Keep track of the last update time
+  let lastUpdateTime = 0;
+
   const updateTimelineData = (newSensorData) => {
+    const currentTime = Date.now(); // Current timestamp in milliseconds
+    if (currentTime - lastUpdateTime < 1000) {
+      // Skip if less than 1 second has passed
+      return;
+    }
+    lastUpdateTime = currentTime; // Update the last update time
+
     const timestamp = new Date().toLocaleTimeString(); // Current time as the x-axis label
     setTimelineData((prevData) => [
       ...prevData,
@@ -65,12 +74,11 @@ function Dashboard() {
     ]);
 
     // Check for Shock value threshold
-    if (parseFloat(newSensorData.Shock) >= 20) {
+    if (parseFloat(newSensorData.Shock) >= 20.0) {
       setShockPopup(true); // Trigger shock alert popup
     }
   };
 
-  // Fetch Sensor Data
   const fetchSensorData = async (type) => {
     try {
       const response = await fetch(`http://127.0.0.1:8080/cse-in/SafePackage/${type}/la`, {
@@ -197,7 +205,6 @@ function Dashboard() {
         flexWrap: "wrap",
       }}
     >
-      {/* Map section */}
       <Box
         sx={{
           flex: 1,
@@ -230,7 +237,6 @@ function Dashboard() {
         </Map>
       </Box>
 
-      {/* Sensor Data section */}
       <Box
         sx={{
           flex: 1,
@@ -268,12 +274,9 @@ function Dashboard() {
             {sensorData.Open === "true" ? "Stolen" : "Safe"}
           </Typography>
         </Box>
-
-        {/* Pass timeline data to DataGraph */}
         <DataGraph timelineData={timelineData} />
       </Box>
 
-      {/* Shock Alert Popup */}
       <Dialog open={shockPopup} onClose={handleShockPopupClose}>
         <DialogTitle sx={{ fontFamily: "'Sour Gummy', cursive" }}>Alert</DialogTitle>
         <DialogContent>
@@ -288,7 +291,6 @@ function Dashboard() {
         </DialogActions>
       </Dialog>
 
-      {/* Chat Section */}
       <Box
         sx={{
           width: "100%",
