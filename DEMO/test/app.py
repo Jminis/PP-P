@@ -6,11 +6,11 @@ app = Flask(__name__)
 # Base URL for ACME server
 CSE_BASE_URL = "http://127.0.0.1:8080/cse-in"
 WEBAPP_URL = "http://127.0.0.1:5000/"
-CONTAINER_PATH = "SafePackage2/shock"
+CONTAINER_PATH = "SafePackage/shock"
 
-# Common headers
+# Common heades
 COMMON_HEADERS = {
-    "X-M2M-Origin": "SafePackage2",
+    "X-M2M-Origin": "SafePackage",
     "X-M2M-RVI": "3"
 }
 
@@ -38,7 +38,7 @@ def create_ae():
     headers = {**COMMON_HEADERS, "Content-Type": "application/json;ty=2", "X-M2M-RI": "req-create-ae"}
     data = {
         "m2m:ae": {
-            "rn": "SafePackage2",
+            "rn": "SafePackage",
             "api": "Ntest",
             "rr": True,
             "srv": ['4'],
@@ -48,13 +48,13 @@ def create_ae():
 
 @app.route("/delete_ae", methods=["POST"])
 def delete_ae():
-    url = f"{CSE_BASE_URL}/SafePackage2"
+    url = f"{CSE_BASE_URL}/SafePackage"
     headers = {**COMMON_HEADERS, "X-M2M-RI": "req-delete-ae"}
     return jsonify(send_request("DELETE", url, headers))
 
 @app.route("/create_container/<string:container_name>", methods=["POST"])
 def create_container(container_name):
-    url = f"{CSE_BASE_URL}/SafePackage2"
+    url = f"{CSE_BASE_URL}/SafePackage"
     headers = {**COMMON_HEADERS, "Content-Type": "application/json;ty=3", "X-M2M-RI": f"req-create-container-{container_name}"}
     data = {
         "m2m:cnt": {
@@ -66,7 +66,7 @@ def create_container(container_name):
 
 @app.route("/delete_container/<string:container_name>", methods=["POST"])
 def delete_container(container_name):
-    url = f"{CSE_BASE_URL}/SafePackage2/{container_name}"
+    url = f"{CSE_BASE_URL}/SafePackage/{container_name}"
     headers = {**COMMON_HEADERS, "X-M2M-RI": f"req-delete-container-{container_name}"}
     return jsonify(send_request("DELETE", url, headers))
 
@@ -79,7 +79,7 @@ def create_content_instance():
     if not container_name or not content_value:
         return jsonify({"status": "error", "message": "Missing container_name or content value"}), 400
 
-    url = f"{CSE_BASE_URL}/SafePackage2/{container_name}"
+    url = f"{CSE_BASE_URL}/SafePackage/{container_name}"
     headers = {**COMMON_HEADERS, "Content-Type": "application/json;ty=4", "X-M2M-RI": f"req-create-cin-{container_name}"}
     data = {
         "m2m:cin": {
@@ -90,7 +90,7 @@ def create_content_instance():
 
 @app.route("/create_subscription/<string:container_name>", methods=["POST"])
 def create_subscription(container_name):
-    url = f"{CSE_BASE_URL}/SafePackage2/{container_name}"
+    url = f"{CSE_BASE_URL}/SafePackage/{container_name}"
     headers = {**COMMON_HEADERS, "Content-Type": "application/json;ty=23", "X-M2M-RI": f"req-create-subscription-{container_name}"}
     data = {
         "m2m:sub": {

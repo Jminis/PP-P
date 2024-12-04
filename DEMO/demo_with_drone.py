@@ -70,11 +70,8 @@ def send_data(url, resource_name, content):
         print(f"[{datetime.now()}] Request exception occurred: {str(e)}")
 
 
-sent_shock_20 = False
-
-def send_location_and_sensor_data(resource_name, latitude, longitude):
+def send_location_and_sensor_data(resource_name, latitude, longitude, elapsed_time):
     """Send location, shock, and temperature data simultaneously."""
-    global sent_shock_20  # Access the global flag
 
     # Send location information
     location_payload = json.dumps({
@@ -85,19 +82,20 @@ def send_location_and_sensor_data(resource_name, latitude, longitude):
     send_data(f"{ACME_BASE_URL}/location", resource_name, location_payload)
 
     # Send shock data
-    if not sent_shock_20:
-        shock_value = 20.0  # Send 20 once
-        sent_shock_20 = True  # Mark as sent
+    if 16 <= elapsed_time < 18:  # 18초 대에 한 번만 전송
+        shock_value = 50.0
     else:
-        shock_value = round(random.uniform(5.0, 20.0), 2)  # Random value after
+        shock_value = round(random.uniform(5.0, 30.0), 2)
     send_data(SHOCK_URL, f"{resource_name}_shock", shock_value)
 
     # Send temperature data
     temperature_value = round(random.uniform(10.0, 12.0), 2)
     send_data(TEMPERATURE_URL, f"{resource_name}_temp", temperature_value)
 
+
 def drone_simulation():
     """Drone movement simulation program."""
+    start_time = time.time()  # Start timer
     try:
         # Fetch departure and destination locations
         start_latitude, start_longitude = fetch_location_data(DEPARTURE_URL)
@@ -106,7 +104,7 @@ def drone_simulation():
         print(f"Departure: {start_latitude}, {start_longitude}")
         print(f"Destination: {destination_latitude}, {destination_longitude}")
 
-        steps = 10  # Number of steps to reach the destination
+        steps = 11  # Number of steps to reach the destination
 
         for step in range(steps + 1):
             # Calculate movement fraction (increases from 0 to 1)
@@ -118,8 +116,11 @@ def drone_simulation():
             # Include current time in the resource name
             resource_name = f"location_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
 
+            # Calculate elapsed time since start
+            elapsed_time = int(time.time() - start_time)
+
             # Send location and sensor data
-            send_location_and_sensor_data(resource_name, current_latitude, current_longitude)
+            send_location_and_sensor_data(resource_name, current_latitude, current_longitude, elapsed_time)
 
             # End simulation upon reaching the destination
             if step == steps:
