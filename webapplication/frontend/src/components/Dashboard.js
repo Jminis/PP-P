@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Map, CustomOverlayMap } from "react-kakao-maps-sdk";
+import { io } from "socket.io-client";
 import DataGraph from "./DataGraph";
 import {
   Box,
@@ -12,7 +13,7 @@ import {
   DialogTitle,
   useTheme,
   TextField,
-  Grid,
+  Grid2,
 } from "@mui/material";
 
 function Dashboard() {
@@ -23,17 +24,18 @@ function Dashboard() {
 
   const [location, setLocation] = useState(null);
   const [sensorData, setSensorData] = useState({ Shock: "", Temperature: "", Open: "" });
-  const [timelineData, setTimelineData] = useState([]);
+  const [timelineData, setTimelineData] = useState([]); // To store historical Shock and Temperature data
   const [isArrived, setIsArrived] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [shockPopup, setShockPopup] = useState(false);
+  const [shockPopup, setShockPopup] = useState(false); // For shock alert popup
   const [chatMessage, setChatMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [isFetching, setIsFetching] = useState(true);
+  const socketRef = useRef(null);
   const theme = useTheme();
 
   const destination = { lat: 37.55062087654126, lng: 127.07425390537487 };
-  const userName = "PP-P";
+  const userName = "PP-P"; // username
 
   const haversineDistance = (coords1, coords2) => {
     const toRad = (x) => (x * Math.PI) / 180;
@@ -50,16 +52,18 @@ function Dashboard() {
     return R * c;
   };
 
+  // Keep track of the last update time
   let lastUpdateTime = 0;
 
   const updateTimelineData = (newSensorData) => {
-    const currentTime = Date.now();
+    const currentTime = Date.now(); // Current timestamp in milliseconds
     if (currentTime - lastUpdateTime < 1000) {
+      // Skip if less than 1 second has passed
       return;
     }
-    lastUpdateTime = currentTime;
+    lastUpdateTime = currentTime; // Update the last update time
 
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString(); // Current time as the x-axis label
     setTimelineData((prevData) => [
       ...prevData,
       {
@@ -69,8 +73,9 @@ function Dashboard() {
       },
     ]);
 
-    if (parseFloat(newSensorData.Shock) >= 40.0) {
-      setShockPopup(true);
+    // Check for Shock value threshold
+    if (parseFloat(newSensorData.Shock) >= 20.0) {
+      setShockPopup(true); // Trigger shock alert popup
     }
   };
 
@@ -112,6 +117,7 @@ function Dashboard() {
     fetchSensorData("Open");
   };
 
+  // Fetch location and sensor data periodically
   useEffect(() => {
     if (!isFetching) return;
 
@@ -134,7 +140,7 @@ function Dashboard() {
           setLocation(newLocation);
 
           const distance = haversineDistance(newLocation, destination);
-          if (distance < 0.01 && !isArrived) {
+          if (distance < 0.1 && !isArrived) {
             setIsArrived(true);
             setShowPopup(true);
           }
@@ -168,7 +174,7 @@ function Dashboard() {
   };
 
   const handleShockPopupClose = () => {
-    setShockPopup(false);
+    setShockPopup(false); // Close shock alert popup
   };
 
   const handleSendMessage = () => {
@@ -199,9 +205,21 @@ function Dashboard() {
         flexWrap: "wrap",
       }}
     >
-      {/* Map Section */}
-      <Box sx={{ flex: 1, padding: 2, borderRadius: 2, boxShadow: 3, backgroundColor: "#fff" }}>
-        <Typography variant="h6" align="center" gutterBottom>
+      <Box
+        sx={{
+          flex: 1,
+          padding: 2,
+          borderRadius: 2,
+          boxShadow: 3,
+          backgroundColor: "#fff",
+        }}
+      >
+        <Typography
+          variant="h6"
+          align="center"
+          gutterBottom
+          sx={{ fontFamily: "'Sour Gummy', cursive" }}
+        >
           SafetyBox Location
         </Typography>
         <Map
@@ -210,7 +228,7 @@ function Dashboard() {
           style={containerStyle}
           appKey="27def025665d22e2a866f398cfb7a3aa"
         >
-          <CustomOverlayMap position={location} zIndex={1}>
+          <CustomOverlayMap position={{ lat: location?.lat || 0, lng: location?.lng || 0 }} zIndex={1}>
             <div style={{ textAlign: "center" }}>
               <img src="/marker.png" alt="marker" style={{ width: "36px", height: "36px" }} />
               <div>SafetyBox</div>
@@ -219,15 +237,60 @@ function Dashboard() {
         </Map>
       </Box>
 
-      {/* Status Section */}
-      <Box sx={{ flex: 1, padding: 2, borderRadius: 2, boxShadow: 3, backgroundColor: "#fff" }}>
-        <Typography variant="h6" align="center" gutterBottom>
+      <Box
+        sx={{
+          flex: 1,
+          padding: 2,
+          borderRadius: 2,
+          boxShadow: 3,
+          backgroundColor: "#fff",
+        }}
+      >
+        <Typography
+          variant="h6"
+          align="center"
+          gutterBottom
+          sx={{ fontFamily: "'Sour Gummy', cursive" }}
+        >
           SafetyBox Status
         </Typography>
+        <Box
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            padding: 2,
+            marginBottom: 2,
+            borderRadius: 1,
+            backgroundColor: theme.palette.background.paper,
+            boxShadow: 1,
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: "'Sour Gummy', cursive",
+              color: sensorData.Open === "true" ? theme.palette.error.main : theme.palette.success.main,
+            }}
+          >
+            {sensorData.Open === "true" ? "Stolen" : "Safe"}
+          </Typography>
+        </Box>
         <DataGraph timelineData={timelineData} />
       </Box>
 
-      {/* Chat Section */}
+      <Dialog open={shockPopup} onClose={handleShockPopupClose}>
+        <DialogTitle sx={{ fontFamily: "'Sour Gummy', cursive" }}>Alert</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontFamily: "'Sour Gummy', cursive" }}>
+            Shocked Safe Package, Need to check!
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleShockPopupClose} color="primary" sx={{ fontFamily: "'Sour Gummy', cursive" }}>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Box
         sx={{
           width: "100%",
@@ -260,8 +323,8 @@ function Dashboard() {
               </div>
             ))}
           </div>
-          <Grid container spacing={2}>
-            <Grid item xs={9}>
+          <Grid2 container spacing={2}>
+            <Grid2 item xs={9}>
               <TextField
                 fullWidth
                 label="Type your message"
@@ -274,8 +337,8 @@ function Dashboard() {
                   backgroundColor: theme.palette.background.paper,
                 }}
               />
-            </Grid>
-            <Grid item xs={3}>
+            </Grid2>
+            <Grid2 item xs={3}>
               <Button
                 fullWidth
                 onClick={handleSendMessage}
@@ -287,33 +350,10 @@ function Dashboard() {
               >
                 Send
               </Button>
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
         </Box>
       </Box>
-
-      {/* Arrival Popup */}
-      <Dialog open={showPopup} onClose={() => handlePopupClose(false)}>
-        <DialogTitle>Arrival Confirmation</DialogTitle>
-        <DialogContent>
-          <DialogContentText>The drone has arrived. Authorize?</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => handlePopupClose(true)}>Yes</Button>
-          <Button onClick={() => handlePopupClose(false)}>No</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Shock Alert Popup */}
-      <Dialog open={shockPopup} onClose={handleShockPopupClose}>
-        <DialogTitle>Alert</DialogTitle>
-        <DialogContent>
-          <DialogContentText>Shock detected! Please check the package.</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleShockPopupClose}>OK</Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }
