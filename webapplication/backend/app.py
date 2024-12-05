@@ -43,7 +43,7 @@ def handle_command():
         }
 
         headers = {
-            "X-M2M-Origin": "CdoorAE",
+            "X-M2M-Origin": "CUserAE",
             "X-M2M-RI": "req-door-command-unlocked",  # Request identifier
             "X-M2M-RVI": "3",
             "Content-Type": "application/json;ty=4",
@@ -74,7 +74,7 @@ def handle_command():
         }
 
         headers = {
-            "X-M2M-Origin": "CdoorAE",
+            "X-M2M-Origin": "CUserAE",
             "X-M2M-RI": "req-door-command-locked",
             "X-M2M-RVI": "3",
             "Content-Type": "application/json;ty=4",
